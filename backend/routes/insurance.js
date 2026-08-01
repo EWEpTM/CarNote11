@@ -7,13 +7,20 @@ const { query, get } = require('../config/database');
 const { authenticateUser } = require('../middleware/auth');
 const { recognizePolicy } = require('../services/ocrService');
 
+// 与系统设置上传目录保持一致 (server.js 中 UPLOAD_PATH 静态服务指向的目录)
+function getBaseUploadDir() {
+    const uploadPath = process.env.UPLOAD_PATH || './uploads';
+    return path.isAbsolute(uploadPath) ? uploadPath : path.resolve(process.cwd(), uploadPath);
+}
+
 // 配置文件上传
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const now = new Date();
         const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        // 保存在 data 目录里面的 upload 文件夹，按时间 (YYYY-MM) 分类
-        const uploadDir = path.resolve(process.cwd(), 'data', 'upload', yearMonth);
+        // 保存在系统上传目录 (UPLOAD_PATH) 下的 insurance 子目录，按时间 (YYYY-MM) 分类，
+        // 这样重置镜像后仍能通过数据卷保留车险保单文件
+        const uploadDir = path.join(getBaseUploadDir(), 'insurance', yearMonth);
 
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
@@ -155,9 +162,9 @@ router.post('/upload', authenticateUser, async (req, res) => {
         }
 
         try {
-            // 生成可访问的相对 URL
-            const relativePath = path.relative(path.resolve(process.cwd()), req.file.path).replace(/\\/g, '/');
-            const fileUrl = '/' + relativePath;
+            // 生成可访问的相对 URL (基于系统上传目录, 对应 /uploads 静态服务)
+            const relativePath = path.relative(getBaseUploadDir(), req.file.path).replace(/\\/g, '/');
+            const fileUrl = '/uploads/' + relativePath;
 
             // 执行 OCR 识别
             const ocrResult = await recognizePolicy(req.file.path);
