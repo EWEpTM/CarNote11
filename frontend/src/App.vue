@@ -74,6 +74,9 @@
 
     <!-- Global Toast -->
     <Toast />
+
+    <!-- Global Confirm Dialog -->
+    <ConfirmDialog />
   </div>
 </template>
 
@@ -83,6 +86,7 @@ import { useRouter, useRoute } from 'vue-router'
 import AppSidebar from './layout/AppSidebar.vue'
 import AppTopbar from './layout/AppTopbar.vue'
 import Sidebar from 'primevue/sidebar'
+import ConfirmDialog from 'primevue/confirmdialog'
 import { useSiteStore } from './utils/siteStore'
 
 const router = useRouter()
@@ -90,7 +94,7 @@ const route = useRoute()
 const currentUser = ref(null)
 const mobileMenuVisible = ref(false)
 const siteStore = useSiteStore()
-const appVersion = ref(__APP_VERSION__ || '1.0.0')
+const appVersion = ref(__APP_VERSION__ || '1.3.0')
 
 const menuItems = computed(() => {
   const items = [
@@ -99,6 +103,7 @@ const menuItems = computed(() => {
     { label: '能耗记录', icon: 'pi pi-bolt', path: '/energy' },
     { label: '保养维修', icon: 'pi pi-wrench', path: '/maintenance' },
     { label: '配件管理', icon: 'pi pi-box', path: '/parts' },
+    { label: '车险管理', icon: 'pi pi-file-edit', path: '/insurance' },
     { label: '消息中心', icon: 'pi pi-megaphone', path: '/messages' },
   ]
 

@@ -231,4 +231,18 @@ export const messagesAPI = {
     getNotifications: () => api.get('/messages/notifications')
 }
 
+// 保险管理 API
+export const insuranceAPI = {
+    getList: (params) => api.get('/insurance', { params }),
+    getDetail: (id) => api.get(`/insurance/${id}`),
+    create: (data) => api.post('/insurance', data),
+    update: (id, data) => api.put(`/insurance/${id}`, data),
+    delete: (id) => api.delete(`/insurance/${id}`),
+    uploadPolicy: (formData) => api.post('/insurance/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    createClaim: (id, data) => api.post(`/insurance/${id}/claims`, data),
+    deleteClaim: (claimId) => api.delete(`/insurance/claims/${claimId}`)
+}
+
 export default api;

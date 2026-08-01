@@ -54,6 +54,7 @@ WORKDIR /app/backend
 # 环境变量
 ENV PORT=53300
 ENV NODE_ENV=production
+ENV OCR_LANG_PATH=/app/backend/language
 
 # 暴露端口
 EXPOSE 53300

@@ -75,6 +75,12 @@ if (!fs.existsSync(uploadDir)) {
 }
 app.use('/uploads', express.static(uploadDir));
 
+const dataUploadDir = path.resolve(process.cwd(), 'data', 'upload');
+if (!fs.existsSync(dataUploadDir)) {
+    fs.mkdirSync(dataUploadDir, { recursive: true });
+}
+app.use('/data/upload', express.static(dataUploadDir));
+
 // 健康检查接口
 app.get('/health', (req, res) => {
     res.json({
@@ -85,12 +91,12 @@ app.get('/health', (req, res) => {
 });
 
 // API 路由
-// API 路由
 app.use('/api/users', require('./routes/users'));
 app.use('/api/vehicles', require('./routes/vehicles'));
 app.use('/api/energy', require('./routes/energy'));
 app.use('/api/maintenance', require('./routes/maintenance'));
 app.use('/api/parts', require('./routes/parts'));
+app.use('/api/insurance', require('./routes/insurance'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/system', require('./routes/system'));
 app.use('/api/admin', require('./routes/admin'));
@@ -171,6 +177,7 @@ if (fs.existsSync(FRONTEND_PATH)) {
         // 如果请求的是 API、上传文件、静态资源或包含文件扩展名，不要返回 index.html
         if (req.path.startsWith('/api') ||
             req.path.startsWith('/uploads') ||
+            req.path.startsWith('/data/upload') ||
             req.path.startsWith('/assets') ||
             req.path.match(/\.\w+$/)) {  // 匹配包含文件扩展名的路径
             return next();

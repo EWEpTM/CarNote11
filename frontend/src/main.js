@@ -26,6 +26,8 @@ import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
 import Toast from 'primevue/toast'
 import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
+import ConfirmDialog from 'primevue/confirmdialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
 import Textarea from 'primevue/textarea'
@@ -41,6 +43,7 @@ const app = createApp(App)
 app.use(router)
 app.use(PrimeVue, { ripple: true })
 app.use(ToastService)
+app.use(ConfirmationService)
 
 // 注册全局组件
 // 注册全局组件
@@ -52,6 +55,7 @@ app.component('DataTable', DataTable)
 app.component('Column', Column)
 app.component('Dialog', Dialog)
 app.component('Toast', Toast)
+app.component('ConfirmDialog', ConfirmDialog)
 app.component('Dropdown', Dropdown)
 app.component('Calendar', Calendar)
 app.component('Textarea', Textarea)

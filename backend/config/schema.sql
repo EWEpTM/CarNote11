@@ -393,3 +393,44 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
 
 CREATE INDEX IF NOT EXISTS idx_api_keys_key_value ON api_keys(key_value);
 
+-- 保险记录表
+CREATE TABLE IF NOT EXISTS insurances (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    vehicle_id INTEGER,
+    policy_number VARCHAR(100),
+    insurance_company VARCHAR(100),
+    start_date DATE,
+    end_date DATE,
+    premium DECIMAL(10, 2),
+    type VARCHAR(50),
+    policy_image_url VARCHAR(255),
+    ocr_content TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+);
+
+-- 出险/理赔记录表
+CREATE TABLE IF NOT EXISTS insurance_claims (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    insurance_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    claim_date DATE NOT NULL,
+    description TEXT,
+    claim_amount DECIMAL(10, 2),
+    status VARCHAR(50) DEFAULT 'processing',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (insurance_id) REFERENCES insurances(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_insurances_user_id ON insurances(user_id);
+CREATE INDEX IF NOT EXISTS idx_insurances_vehicle_id ON insurances(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_insurance_claims_insurance_id ON insurance_claims(insurance_id);
+
+

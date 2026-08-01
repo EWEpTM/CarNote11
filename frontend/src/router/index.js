@@ -15,6 +15,8 @@ const Analytics = () => import('../views/Analytics.vue')
 const Settings = () => import('../views/Settings.vue')
 const Admin = () => import('../views/Admin.vue')
 const ResetPassword = () => import('../views/ResetPassword.vue')
+const Insurance = () => import('../views/Insurance.vue')
+const InsuranceDetail = () => import('../views/InsuranceDetail.vue')
 const Messages = () => import('../views/Messages.vue')
 
 // VIP 会员中心路由 - 条件导入
@@ -75,6 +77,18 @@ const routes = [
         path: '/parts',
         name: 'Parts',
         component: Parts,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/insurance',
+        name: 'Insurance',
+        component: Insurance,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/insurance/:id',
+        name: 'InsuranceDetail',
+        component: InsuranceDetail,
         meta: { requiresAuth: true }
     },
     {

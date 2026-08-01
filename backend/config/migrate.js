@@ -223,6 +223,40 @@ async function migrateSQLite() {
                 FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
                 FOREIGN KEY (part_id) REFERENCES parts(id) ON DELETE SET NULL
             )`},
+            {
+                name: 'insurances', template: `CREATE TABLE insurances (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                vehicle_id INTEGER,
+                policy_number VARCHAR(100),
+                insurance_company VARCHAR(100),
+                start_date DATE,
+                end_date DATE,
+                premium DECIMAL(10, 2),
+                type VARCHAR(50),
+                policy_image_url VARCHAR(255),
+                ocr_content TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+            )`},
+            {
+                name: 'insurance_claims', template: `CREATE TABLE insurance_claims (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                insurance_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                claim_date DATE NOT NULL,
+                description TEXT,
+                claim_amount DECIMAL(10, 2),
+                status VARCHAR(50) DEFAULT 'processing',
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (insurance_id) REFERENCES insurances(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )`}
 // 更多表可以继续在这里添加
         ];
 
