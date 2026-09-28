@@ -4,10 +4,13 @@
  */
 
 const sqlite3 = require('sqlite3').verbose();
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+
+// DATE (OID 1082) 保持 'YYYY-MM-DD' 字符串，避免转成 JS Date 再被 JSON 成 UTC
+types.setTypeParser(1082, (val) => val);
 
 const DB_TYPE = process.env.DB_TYPE || 'sqlite';
 let db = null;
