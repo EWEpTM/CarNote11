@@ -59,7 +59,7 @@
               </div>
               <div class="mb-2">
                 <i class="pi pi-calendar mr-2 text-primary"></i>
-                保障期限: {{ formatDate(item.start_date) }} ~ {{ formatDate(item.end_date) }}
+                保障期限: {{ formatDate(item.start_date, '未设置') }} ~ {{ formatDate(item.end_date, '未设置') }}
               </div>
               <div class="mb-2">
                 <i class="pi pi-money-bill mr-2 text-primary"></i>
@@ -154,6 +154,7 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import { insuranceAPI, vehicleAPI } from '../api'
+import { toDateOnly, parseDateLocal, formatDate } from '../utils/date'
 
 const router = useRouter()
 const toast = useToast()
@@ -225,7 +226,7 @@ const getVehiclePlate = (vehicleId) => {
 const getExpiryStatus = (endDateStr) => {
   if (!endDateStr) return { label: '未设置期限', severity: 'info' }
   const now = new Date()
-  const endDate = new Date(endDateStr)
+  const endDate = parseDateLocal(endDateStr) || new Date(endDateStr)
   const diffDays = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24))
 
   if (diffDays < 0) {
@@ -235,11 +236,6 @@ const getExpiryStatus = (endDateStr) => {
   } else {
     return { label: '保障中', severity: 'success' }
   }
-}
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '未设置'
-  return dateStr.split('T')[0]
 }
 
 const formatNumber = (num) => {
@@ -276,8 +272,8 @@ const openEditDialog = (item) => {
     insurance_company: item.insurance_company || '',
     policy_number: item.policy_number || '',
     type: item.type || '商业险',
-    start_date: item.start_date ? new Date(item.start_date) : null,
-    end_date: item.end_date ? new Date(item.end_date) : null,
+    start_date: parseDateLocal(item.start_date),
+    end_date: parseDateLocal(item.end_date),
     premium: item.premium || 0,
     policy_image_url: item.policy_image_url || '',
     ocr_content: item.ocr_content || '',
@@ -306,7 +302,6 @@ const handleFileUpload = async (event) => {
     if (res.success) {
       toast.add({ severity: 'success', summary: '成功', detail: '保单上传并 OCR 识别完成', life: 3000 })
 
-      // 自动打开新增表单并填充 OCR 结果
       openAddDialog()
       form.value.policy_image_url = res.data.imageUrl
       form.value.ocr_content = res.data.ocrContent
@@ -316,8 +311,8 @@ const handleFileUpload = async (event) => {
         if (pd.policyNumber) form.value.policy_number = pd.policyNumber
         if (pd.insuranceCompany) form.value.insurance_company = pd.insuranceCompany
         if (pd.premium !== undefined && pd.premium !== null) form.value.premium = pd.premium
-        if (pd.startDate) form.value.start_date = new Date(pd.startDate)
-        if (pd.endDate) form.value.end_date = new Date(pd.endDate)
+        if (pd.startDate) form.value.start_date = parseDateLocal(pd.startDate)
+        if (pd.endDate) form.value.end_date = parseDateLocal(pd.endDate)
         if (pd.insuranceType && typeOptions.includes(pd.insuranceType)) form.value.type = pd.insuranceType
       }
     }
@@ -338,8 +333,8 @@ const saveInsurance = async () => {
   try {
     const payload = {
       ...form.value,
-      start_date: form.value.start_date ? new Date(form.value.start_date).toISOString().split('T')[0] : null,
-      end_date: form.value.end_date ? new Date(form.value.end_date).toISOString().split('T')[0] : null
+      start_date: toDateOnly(form.value.start_date),
+      end_date: toDateOnly(form.value.end_date)
     }
 
     if (isEdit.value) {
