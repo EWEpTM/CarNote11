@@ -34,7 +34,7 @@
       responsiveLayout="stack" breakpoint="960px" class="responsive-table">
       <Column field="maintenance_date" header="日期" sortable>
         <template #body="slotProps">
-          {{ formatDate(slotProps.data.maintenance_date) }}
+          {{ formatDateTime(slotProps.data.maintenance_date) || formatDate(slotProps.data.maintenance_date) }}
         </template>
       </Column>
       <Column field="vehicle_plate" header="车辆"></Column>
@@ -175,6 +175,7 @@ import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { maintenanceAPI, vehicleAPI, locationsAPI } from '../api'
 import logger from '../utils/logger'
+import { toDateOnly, parseDateLocal, formatDate, formatDateTime } from '../utils/date'
 
 const LocationPicker = defineAsyncComponent(() => import('../components/LocationPicker.vue'))
 
@@ -212,6 +213,7 @@ const defaultForm = {
   cost: null,
   service_provider: '',
   description: '',
+  next_maintenance_date: null,
   next_maintenance_mileage: null,
   notes: '',
   location_name: '',
@@ -280,8 +282,8 @@ const editRecord = (record) => {
   editingRecord.value = record
   recordForm.value = {
     ...record,
-    maintenance_date: new Date(record.maintenance_date),
-    next_maintenance_date: record.next_maintenance_date ? new Date(record.next_maintenance_date) : null
+    maintenance_date: record.maintenance_date ? new Date(record.maintenance_date) : new Date(),
+    next_maintenance_date: parseDateLocal(record.next_maintenance_date)
   }
   showDialog.value = true
 }
@@ -295,7 +297,10 @@ const saveRecord = async () => {
 
   saving.value = true
   try {
-    const data = { ...recordForm.value }
+    const data = {
+      ...recordForm.value,
+      next_maintenance_date: toDateOnly(recordForm.value.next_maintenance_date)
+    }
 
     let res
     if (editingRecord.value) {
@@ -373,14 +378,8 @@ const deleteRecord = async (id) => {
   }
 }
 
-// 格式化工具
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString()
-}
-
 const formatNumber = (num) => num ? num.toLocaleString() : 0
-const formatCurrency = (val) => val ? '¥' + val.toFixed(2) : '¥0.00'
+const formatCurrency = (val) => val ? '¥' + Number(val).toFixed(2) : '¥0.00'
 
 const getTypeLabel = (type) => {
   const map = { 'maintenance': '保养', 'repair': '维修', 'upgrade': '改装', 'other': '其他' }
