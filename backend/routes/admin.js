@@ -343,4 +343,29 @@ router.delete('/locations/:id', asyncHandler(async (req, res) => {
     res.json({ success: true, message: '站点已删除' });
 }));
 
+/**
+ * 附件管理 - 列表
+ * 显示上传用户 / 使用状态 / 关联项目，未使用的文件会被标注
+ */
+router.get('/attachments', asyncHandler(async (req, res) => {
+    const { listAttachments } = require('../services/attachmentService');
+    const data = await listAttachments();
+    res.json({ success: true, data });
+}));
+
+/**
+ * 附件管理 - 删除
+ * 被业务记录引用的文件不允许删除 (返回 409)
+ */
+router.post('/attachments/delete', asyncHandler(async (req, res) => {
+    const { id, url } = req.body || {};
+    const { deleteAttachment } = require('../services/attachmentService');
+    const result = await deleteAttachment({ id, url });
+    if (result.ok) {
+        await createAuditLog(req.userId, 'delete_attachment', { id, url });
+        return res.json({ success: true, message: result.message });
+    }
+    return res.status(result.status || 400).json({ success: false, message: result.message });
+}));
+
 module.exports = router;

@@ -433,4 +433,20 @@ CREATE INDEX IF NOT EXISTS idx_insurances_user_id ON insurances(user_id);
 CREATE INDEX IF NOT EXISTS idx_insurances_vehicle_id ON insurances(vehicle_id);
 CREATE INDEX IF NOT EXISTS idx_insurance_claims_insurance_id ON insurance_claims(insurance_id);
 
+-- 附件管理表 (记录上传文件，供后台附件管理使用)
+CREATE TABLE IF NOT EXISTS attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    original_name VARCHAR(255), -- 原始文件名
+    stored_name VARCHAR(255), -- 存储文件名
+    mime_type VARCHAR(100), -- MIME 类型
+    size INTEGER, -- 文件大小 (字节)
+    url VARCHAR(255), -- 可访问 URL (/uploads/...)
+    project_type VARCHAR(50), -- 关联项目类型: insurance/system/maintenance/vehicle/parts
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_attachments_user_id ON attachments(user_id);
+
 

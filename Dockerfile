@@ -47,9 +47,12 @@ RUN mkdir -p /app/backend/data /app/backend/uploads && \
     chown -R node:node /app && \
     chmod -R 755 /app
 
-# 切换用户
-USER node
-WORKDIR /app/backend
+# 安装 su-exec 用于启动脚本内降权运行
+RUN apk add --no-cache su-exec
+
+# 启动脚本：以 root 运行，自修复持久化卷所有权后降权为 node 用户启动应用
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # 环境变量
 ENV PORT=53300
@@ -63,5 +66,9 @@ EXPOSE 53300
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD node -e "require('http').get('http://localhost:53300/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# 启动
+WORKDIR /app/backend
+
+# 入口与启动命令：由 entrypoint 脚本自修复持久化卷权限后降权为 node 用户启动应用
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "server.js"]
+

@@ -256,6 +256,19 @@ async function migrateSQLite() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (insurance_id) REFERENCES insurances(id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )`},
+            {
+                name: 'attachments', template: `CREATE TABLE attachments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                original_name VARCHAR(255),
+                stored_name VARCHAR(255),
+                mime_type VARCHAR(100),
+                size INTEGER,
+                url VARCHAR(255),
+                project_type VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
             )`}
 // 更多表可以继续在这里添加
         ];

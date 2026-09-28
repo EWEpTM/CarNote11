@@ -209,7 +209,9 @@ export const adminAPI = {
     deletePart: (id) => api.delete(`/admin/parts/${id}`),
     getLocations: () => api.get('/admin/locations'),
     updateLocation: (id, data) => api.put(`/admin/locations/${id}`, data),
-    deleteLocation: (id) => api.delete(`/admin/locations/${id}`)
+    deleteLocation: (id) => api.delete(`/admin/locations/${id}`),
+    getAttachments: () => api.get('/admin/attachments'),
+    deleteAttachment: (data) => api.post('/admin/attachments/delete', data)
 }
 
 // Locations API

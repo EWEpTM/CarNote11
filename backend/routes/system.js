@@ -84,6 +84,31 @@ router.post('/upload-icon', authenticateUser, upload.single('icon'), asyncHandle
 
         const iconUrl = `/uploads/${mainIconName}`;
 
+        // 记录附件 (用于后台附件管理): 原始上传文件 + 最终显示图标
+        try {
+            const { recordAttachment } = require('../services/attachmentService');
+            await recordAttachment({
+                userId: req.userId,
+                originalName: req.file.originalname,
+                storedName: path.basename(req.file.path),
+                mimetype: req.file.mimetype,
+                size: req.file.size,
+                url: '/uploads/' + path.basename(req.file.path),
+                projectType: 'system'
+            });
+            await recordAttachment({
+                userId: req.userId,
+                originalName: req.file.originalname,
+                storedName: mainIconName,
+                mimetype: 'image/png',
+                size: fs.existsSync(path.join(uploadDir, mainIconName)) ? fs.statSync(path.join(uploadDir, mainIconName)).size : 0,
+                url: iconUrl,
+                projectType: 'system'
+            });
+        } catch (e) {
+            console.error('[System] 记录附件失败:', e.message);
+        }
+
         // 更新数据库设置
         const key = 'site_icon';
         const exists = await get("SELECT key FROM system_settings WHERE key = ?", [key]);

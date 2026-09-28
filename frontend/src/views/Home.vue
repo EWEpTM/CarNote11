@@ -485,10 +485,10 @@ const pieOptions = {
 const expenseChartData = computed(() => {
   const s = expenseData.value?.summary || {}
   return {
-    labels: ['补能费用', '保养维修', '配件更换'],
+    labels: ['补能费用', '保养维修', '配件更换', '保险费用'],
     datasets: [{
-      data: [s.energy || 0, s.maintenance || 0, s.parts || 0],
-      backgroundColor: ['#3B82F6', '#10B981', '#F59E0B'],
+      data: [s.energy || 0, s.maintenance || 0, s.parts || 0, s.insurance || 0],
+      backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'],
       borderWidth: 0
     }]
   }
@@ -499,7 +499,8 @@ const expenseList = computed(() => {
   return [
     { label: '补能费用', value: s.energy || 0, color: '#3B82F6' },
     { label: '保养维修', value: s.maintenance || 0, color: '#10B981' },
-    { label: '配件更换', value: s.parts || 0, color: '#F59E0B' }
+    { label: '配件更换', value: s.parts || 0, color: '#F59E0B' },
+    { label: '保险费用', value: s.insurance || 0, color: '#8B5CF6' }
   ]
 })
 

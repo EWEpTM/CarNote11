@@ -166,6 +166,22 @@ router.post('/upload', authenticateUser, async (req, res) => {
             const relativePath = path.relative(getBaseUploadDir(), req.file.path).replace(/\\/g, '/');
             const fileUrl = '/uploads/' + relativePath;
 
+            // 记录附件 (用于后台附件管理)
+            try {
+                const { recordAttachment } = require('../services/attachmentService');
+                await recordAttachment({
+                    userId: req.userId,
+                    originalName: req.file.originalname,
+                    storedName: req.file.filename,
+                    mimetype: req.file.mimetype,
+                    size: req.file.size,
+                    url: fileUrl,
+                    projectType: 'insurance'
+                });
+            } catch (e) {
+                console.error('[Insurance] 记录附件失败:', e.message);
+            }
+
             // 执行 OCR 识别
             const ocrResult = await recognizePolicy(req.file.path);
 

@@ -295,6 +295,63 @@
                 </TabView>
             </TabPanel>
 
+            <!-- 附件管理 -->
+            <TabPanel header="附件管理">
+                <div class="mb-4 flex flex-column md:flex-row md:justify-content-between md:align-items-center gap-3">
+                    <h2 class="m-0">上传文件管理</h2>
+                    <div class="flex flex-wrap gap-2 align-items-center">
+                        <span class="text-sm text-600">共 {{ attachments.length }} 个文件</span>
+                        <Checkbox v-model="attachmentsOnlyUnused" :binary="true" inputId="attOnlyUnused" />
+                        <label for="attOnlyUnused" style="display: inline; margin-bottom: 0">仅显示未使用文件</label>
+                        <Button icon="pi pi-refresh" rounded text @click="loadAttachments" />
+                    </div>
+                </div>
+                <DataTable :value="filteredAttachments" :loading="loading" stripedRows paginator :rows="10"
+                    responsiveLayout="stack" breakpoint="960px" class="responsive-table">
+                    <Column field="type_label" header="类型" sortable></Column>
+                    <Column field="original_name" header="文件名" sortable>
+                        <template #body="slotProps">
+                            <a v-if="slotProps.data.file_exists" :href="slotProps.data.url" target="_blank"
+                                rel="noopener" class="text-primary"
+                                style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px; display: inline-block">
+                                {{ slotProps.data.original_name || slotProps.data.stored_name }}
+                            </a>
+                            <span v-else class="text-500 text-sm">
+                                {{ slotProps.data.original_name || slotProps.data.stored_name }}
+                            </span>
+                        </template>
+                    </Column>
+                    <Column field="uploader_name" header="上传用户" sortable></Column>
+                    <Column field="size" header="大小" sortable>
+                        <template #body="slotProps">{{ formatFileSize(slotProps.data.size) }}</template>
+                    </Column>
+                    <Column field="created_at" header="上传时间" sortable>
+                        <template #body="slotProps">{{ formatDateTime(slotProps.data.created_at) }}</template>
+                    </Column>
+                    <Column header="使用状态">
+                        <template #body="slotProps">
+                            <div class="flex flex-column gap-1">
+                                <Tag :value="slotProps.data.used ? '已使用' : '未使用'"
+                                    :severity="slotProps.data.used ? 'success' : 'danger'" />
+                                <Tag v-if="!slotProps.data.file_exists" value="文件缺失" severity="warning" class="mt-1" />
+                            </div>
+                        </template>
+                    </Column>
+                    <Column header="关联项目">
+                        <template #body="slotProps">
+                            <span v-if="slotProps.data.project_label" class="text-sm">{{ slotProps.data.project_label }}</span>
+                            <span v-else class="text-500 text-sm">—</span>
+                        </template>
+                    </Column>
+                    <Column header="操作">
+                        <template #body="slotProps">
+                            <Button icon="pi pi-trash" text rounded severity="danger"
+                                @click="deleteAttachment(slotProps.data)" />
+                        </template>
+                    </Column>
+                </DataTable>
+            </TabPanel>
+
             <!-- 审计与日志 (原 276) -->
             <TabPanel header="审计与日志">
                 <DataTable :value="loginLogs" :loading="loading" stripedRows paginator :rows="20"
@@ -545,6 +602,8 @@ const saving = ref(false)
 
 const users = ref([])
 const loginLogs = ref([])
+const attachments = ref([])
+const attachmentsOnlyUnused = ref(false)
 const smtpConfig = ref({})
 const mgmtData = ref({
     vehicles: [],
@@ -694,6 +753,43 @@ const loadLogs = async () => {
         const res = await adminAPI.getLoginLogs()
         if (res.success) loginLogs.value = res.data
     } catch (e) { }
+}
+
+const filteredAttachments = computed(() => {
+    if (!attachmentsOnlyUnused.value) return attachments.value
+    return attachments.value.filter(a => !a.used)
+})
+
+const loadAttachments = async () => {
+    loading.value = true
+    try {
+        const res = await adminAPI.getAttachments()
+        if (res.success) attachments.value = res.data
+    } catch (e) {
+        toast.add({ severity: 'error', summary: '加载失败', detail: '附件列表加载失败', life: 3000 })
+    } finally {
+        loading.value = false
+    }
+}
+
+const deleteAttachment = async (item) => {
+    if (!confirm(`确定要删除文件 "${item.original_name || item.stored_name}" 吗？`)) return
+    try {
+        const res = await adminAPI.deleteAttachment({ id: item.id, url: item.url })
+        if (res.success) {
+            toast.add({ severity: 'success', summary: '成功', detail: '文件已删除', life: 3000 })
+            loadAttachments()
+        }
+    } catch (e) {
+        toast.add({ severity: 'error', summary: '错误', detail: (e && e.message) || '删除失败', life: 4000 })
+    }
+}
+
+const formatFileSize = (bytes) => {
+    if (!bytes && bytes !== 0) return ''
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB'
 }
 
 const loadSmtp = async () => {
@@ -930,8 +1026,8 @@ watch(activeTab, (idx) => {
     }
     if (idx === 1) loadUsers()
     if (idx === 2) loadMgmtRecords()
-    if (idx === 3) loadLogs()
-    if (idx === 4) loadAdminLocations()
+    if (idx === 3) loadAttachments()
+    if (idx === 4) loadLogs()
 })
 
 const formatDate = (d) => d ? new Date(d).toLocaleDateString() : ''
