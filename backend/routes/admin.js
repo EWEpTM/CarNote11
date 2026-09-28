@@ -127,6 +127,93 @@ router.post('/users/:id/reset-password', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * 删除用户及其所有关联数据（不可恢复）
+ * 级联删除：车辆、能耗、保养、配件、保险、API Key、设置、工单、会员等
+ */
+router.delete('/users/:id', asyncHandler(async (req, res) => {
+    const targetId = parseInt(req.params.id, 10);
+
+    if (Number.isNaN(targetId)) {
+        return res.status(400).json({ success: false, message: '无效的用户 ID' });
+    }
+
+    // 禁止删除自己
+    if (targetId === parseInt(req.userId, 10)) {
+        return res.status(400).json({ success: false, message: '不能删除自己的账号' });
+    }
+
+    const user = await get('SELECT id, username, role FROM users WHERE id = ?', [targetId]);
+    if (!user) {
+        return res.status(404).json({ success: false, message: '用户不存在' });
+    }
+
+    // 若目标是管理员，需保证删除后仍至少有一名管理员
+    if (user.role === 'admin') {
+        const adminCount = await get(
+            `SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND id != ?`,
+            [targetId]
+        );
+        if (parseInt(adminCount.count, 10) < 1) {
+            return res.status(400).json({
+                success: false,
+                message: '不能删除最后一个管理员账号'
+            });
+        }
+    }
+
+    // 显式删除关联数据（兼容未开启 CASCADE 或缺少外键的表）
+    // 1. 保险理赔
+    await query('DELETE FROM insurance_claims WHERE user_id = ?', [targetId]);
+    // 2. 保险保单
+    await query('DELETE FROM insurances WHERE user_id = ?', [targetId]);
+    // 3. 车辆相关（能耗 / 保养 / 配件 / 配件更换 / API Key 绑车）
+    const vehicles = await query('SELECT id FROM vehicles WHERE user_id = ?', [targetId]);
+    for (const v of vehicles) {
+        await query('DELETE FROM energy_logs WHERE vehicle_id = ?', [v.id]);
+        await query('DELETE FROM maintenance_records WHERE vehicle_id = ?', [v.id]);
+        await query('DELETE FROM part_replacements WHERE vehicle_id = ?', [v.id]);
+        await query('DELETE FROM parts WHERE vehicle_id = ?', [v.id]);
+        await query('UPDATE api_keys SET vehicle_id = NULL WHERE vehicle_id = ?', [v.id]);
+    }
+    // 4. API Key
+    await query('DELETE FROM api_keys WHERE user_id = ?', [targetId]);
+    // 5. 车辆
+    await query('DELETE FROM vehicles WHERE user_id = ?', [targetId]);
+    // 6. 用户设置
+    await query('DELETE FROM user_settings WHERE user_id = ?', [targetId]);
+    // 7. 工单
+    await query('DELETE FROM tickets WHERE user_id = ?', [targetId]);
+    // 8. 该用户创建的公告
+    await query('DELETE FROM announcements WHERE created_by = ?', [targetId]);
+    // 9. 会员表（若存在）
+    try {
+        await query('DELETE FROM memberships WHERE user_id = ?', [targetId]);
+    } catch (e) {
+        // 表可能不存在，忽略
+    }
+    // 10. 共享站点创建者置空
+    await query('UPDATE shared_locations SET created_by = NULL WHERE created_by = ?', [targetId]);
+    // 11. 审计日志中该用户操作可保留，也可删除；这里删除以“清空相关数据”
+    try {
+        await query('DELETE FROM audit_logs WHERE user_id = ?', [targetId]);
+    } catch (e) {
+        // 忽略
+    }
+    // 12. 删除用户本身
+    await query('DELETE FROM users WHERE id = ?', [targetId]);
+
+    await createAuditLog(req.userId, 'admin_delete_user', {
+        targetId,
+        targetUsername: user.username
+    });
+
+    res.json({
+        success: true,
+        message: `用户「${user.username}」及其所有关联数据已永久删除`
+    });
+}));
+
+/**
  * 获取系统设置 (SMTP)
  */
 router.get('/settings/smtp', asyncHandler(async (req, res) => {
