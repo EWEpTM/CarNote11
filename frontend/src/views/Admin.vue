@@ -870,6 +870,40 @@ const toggleUserStatus = async (user) => {
     }
 }
 
+const confirmDeleteUser = async (user) => {
+    const currentId = localStorage.getItem('userId')
+    if (String(user.id) === String(currentId)) {
+        toast.add({ severity: 'warn', summary: '提示', detail: '不能删除自己的账号', life: 3000 })
+        return
+    }
+    const ok = confirm(
+        `确定要永久删除用户「${user.username}」吗？\n\n` +
+        `将同时删除该用户的：车辆、能耗记录、保养记录、配件、保险、API Key、设置、工单等全部数据。\n` +
+        `此操作不可恢复！`
+    )
+    if (!ok) return
+
+    const ok2 = confirm(`再次确认：真的要删除「${user.username}」及其全部数据吗？`)
+    if (!ok2) return
+
+    try {
+        const res = await adminAPI.deleteUser(user.id)
+        if (res.success) {
+            toast.add({ severity: 'success', summary: '成功', detail: res.message || '用户已删除', life: 4000 })
+            loadUsers()
+        } else {
+            toast.add({ severity: 'error', summary: '失败', detail: res.message || '删除失败', life: 4000 })
+        }
+    } catch (e) {
+        toast.add({
+            severity: 'error',
+            summary: '错误',
+            detail: e.message || e || '删除失败',
+            life: 4000
+        })
+    }
+}
+
 const confirmResetPwd = async (user) => {
     if (!confirm(`确定要重置用户 "${user.username}" 的密码吗？`)) return
     try {
