@@ -208,9 +208,10 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSiteStore } from '../utils/siteStore'
-import { vehicleAPI, analyticsAPI, energyAPI, maintenanceAPI } from '../api' // Added energy/maintenance APIs
+import { vehicleAPI, analyticsAPI, energyAPI, maintenanceAPI } from '../api'
 import logger from '../utils/logger'
 import Chart from 'primevue/chart'
+import { formatDate, toDateOnly } from '../utils/date'
 
 const router = useRouter()
 const siteStore = useSiteStore()
@@ -219,8 +220,8 @@ const currentUser = ref(JSON.parse(localStorage.getItem('currentUser') || '{}'))
 // State
 const vehicles = ref([])
 const selectedVehicleId = ref(null)
-const selectedVehicleIds = ref([]) // 多车对比选中的车辆 IDs
-const timeRange = ref('year') // default to year
+const selectedVehicleIds = ref([])
+const timeRange = ref('year')
 const loading = ref(false)
 
 const overview = ref({})
@@ -252,10 +253,7 @@ const filteredTimeRanges = computed(() => {
   return timeRanges
 })
 
-// 多车对比数据存储
 const comparisonData = ref([])
-
-// ------------------
 
 // Fetch Vehicles
 const loadVehicles = async () => {
@@ -281,15 +279,14 @@ const loadDashboardData = async () => {
   try {
     const params = { range: timeRange.value }
 
-    // 如果是自定义时间范围
+    // 自定义时间范围：用本地日历日，避免 toISOString 偏一天
     if (timeRange.value === 'custom' && customDates.value && customDates.value[0] && customDates.value[1]) {
-      params.start_date = customDates.value[0].toISOString().split('T')[0]
-      params.end_date = customDates.value[1].toISOString().split('T')[0]
+      params.start_date = toDateOnly(customDates.value[0])
+      params.end_date = toDateOnly(customDates.value[1])
       params.range = 'custom'
     }
 
     if (comparisonMode.value) {
-      // 对比模式：加载选中车辆的数据并聚合
       const vehiclesToCompare = selectedVehicleIds.value.length > 0
         ? vehicles.value.filter(v => selectedVehicleIds.value.includes(v.id))
         : vehicles.value
@@ -308,7 +305,6 @@ const loadDashboardData = async () => {
         return { vehicle: v, overview: ov.data, expenses: ex.data, monthly: mon.data }
       }))
 
-      // 简单聚合总览数据
       const summary = { total_mileage: 0, total_cost: 0, avg_consumption: 0, count: 0 }
       allData.forEach(d => {
         if (d.overview) {
@@ -363,10 +359,8 @@ const loadDashboardData = async () => {
   }
 }
 
-// Fetch Recent Activities (Manual combination of latest energy and maintenance)
 const fetchRecentActivities = async (vehicleId) => {
   try {
-    // Fetch last 5 energy logs and last 5 maintenance records
     const [energyRes, maintRes] = await Promise.all([
       energyAPI.getList({ vehicle_id: vehicleId, page: 1, limit: 5 }),
       maintenanceAPI.getList({ vehicle_id: vehicleId, page: 1, limit: 5 })
@@ -378,7 +372,6 @@ const fetchRecentActivities = async (vehicleId) => {
     const activities = []
 
     if (energyRes.success) {
-      // Handle nested data structure: { success, data: { logs, pagination } }
       const energyLogs = energyRes.data?.logs || energyRes.data || []
       energyLogs.forEach(log => {
         activities.push({
@@ -404,7 +397,6 @@ const fetchRecentActivities = async (vehicleId) => {
       })
     }
 
-    // Sort by date desc and take top 5
     return activities.sort((a, b) => b.timestamp - a.timestamp).slice(0, 5)
 
   } catch (e) {
@@ -413,17 +405,15 @@ const fetchRecentActivities = async (vehicleId) => {
   }
 }
 
-// Computed Props
 const unit = computed(() => {
   const v = vehicles.value.find(ve => ve.id === selectedVehicleId.value)
   return v?.power_type === 'electric' ? 'kWh/100km' : 'L/100km'
 })
 
-// Charts Logic
 const mainChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: { legend: { display: false } }, // Custom legend used in template
+  plugins: { legend: { display: false } },
   scales: {
     y: {
       type: 'linear',
@@ -503,14 +493,11 @@ const expenseList = computed(() => {
   ]
 })
 
-// Formatters
 const formatNumber = (n) => n ? Number(n).toLocaleString() : 0
 const formatCurrency = (v) => v ? '¥' + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '¥0.00'
-const formatDate = (d) => d ? new Date(d).toLocaleDateString() : ''
 const getActivityLabel = (t) => t === 'energy' ? '能耗' : '保养'
 const getActivitySeverity = (t) => t === 'energy' ? 'info' : 'warning'
 
-// Watch for vehicle or time range changes
 watch(selectedVehicleId, (newVal) => {
   logger.debug('车辆选择变更:', newVal)
   if (newVal) {
@@ -527,7 +514,6 @@ watch(timeRange, (newVal) => {
 
 watch(comparisonMode, (newVal) => {
   if (newVal && vehicles.value.length > 0) {
-    // 切换到对比模式时，默认选中所有车辆
     selectedVehicleIds.value = vehicles.value.map(v => v.id)
   }
   loadDashboardData()
