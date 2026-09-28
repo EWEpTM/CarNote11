@@ -144,9 +144,9 @@
     <Dialog :visible="showReplaceDialog" @update:visible="showReplaceDialog = $event" header="记录配件更换" :modal="true"
       :breakpoints="{ '960px': '85vw', '640px': '95vw' }" :style="{ width: '500px' }">
       <div v-if="replacingPart" class="mb-4 surface-100 p-3 border-round">
-        <div class="font-bold mb-1">正在更换: {{ replacingPart.part_name }}</div>
+        <div class="font-bold mb-1">正在更换: {{ replacingPart.name }}</div>
         <div class="text-sm text-600">
-          当前安装于: {{ formatDate(replacingPart.install_date) }} ({{ replacingPart.install_mileage }} km)
+          当前安装于: {{ formatDate(replacingPart.installed_date) }} ({{ replacingPart.installed_mileage }} km)
         </div>
       </div>
 
@@ -238,6 +238,7 @@ import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { partsAPI, vehicleAPI, locationsAPI } from '../api'
 import logger from '../utils/logger'
+import { toDateOnly, parseDateLocal, formatDate } from '../utils/date'
 
 const LocationPicker = defineAsyncComponent(() => import('../components/LocationPicker.vue'))
 
@@ -356,7 +357,7 @@ const editPart = (part) => {
   editingPart.value = part
   partForm.value = {
     ...part,
-    installed_date: new Date(part.installed_date)
+    installed_date: parseDateLocal(part.installed_date)
   }
   showDialog.value = true
 }
@@ -370,7 +371,10 @@ const savePart = async () => {
 
   saving.value = true
   try {
-    const data = { ...partForm.value }
+    const data = {
+      ...partForm.value,
+      installed_date: toDateOnly(partForm.value.installed_date)
+    }
 
     let res
     if (editingPart.value) {
@@ -396,7 +400,7 @@ const openReplaceDialog = (part) => {
   replacingPart.value = part
   replaceForm.value = {
     replacement_date: new Date(),
-    mileage: null,  // 理想情况下应自动填入车辆当前里程
+    mileage: null,
     cost: null,
     service_provider: '',
     notes: '',
@@ -466,8 +470,8 @@ const confirmReplace = async () => {
       part_id: replacingPart.value.id,
       vehicle_id: replacingPart.value.vehicle_id,
       old_part_name: replacingPart.value.name,
-      new_part_name: replacingPart.value.name, // 默认同名
-      replacement_date: replaceForm.value.replacement_date,
+      new_part_name: replacingPart.value.name,
+      replacement_date: toDateOnly(replaceForm.value.replacement_date),
       mileage: replaceForm.value.mileage,
       cost: replaceForm.value.cost,
       service_provider: replaceForm.value.service_provider,
@@ -491,7 +495,6 @@ const confirmReplace = async () => {
   }
 }
 
-
 // 删除配件
 const deletePart = async (id) => {
   if (!confirm('确定要删除这个配件及其历史记录吗？')) return
@@ -509,22 +512,20 @@ const deletePart = async (id) => {
 
 // 辅助函数
 const getVehiclePlate = (id) => vehicles.value.find(v => v.id === id)?.plate_number || '未知'
-const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString() : ''
 const formatNumber = (num) => num ? num.toLocaleString() : 0
-const formatCurrency = (val) => val ? '¥' + val.toFixed(2) : '¥0.00'
+const formatCurrency = (val) => val ? '¥' + Number(val).toFixed(2) : '¥0.00'
 
 const getStatusLabel = (status) => {
-  const map = { 'normal': '正常', 'warning': '即将更换', 'critical': '急需更换' }
+  const map = { 'normal': '正常', 'warning': '即将更换', 'critical': '急需更换', 'expired': '需更换' }
   return map[status] || status
 }
 
 const getStatusSeverity = (status) => {
-  const map = { 'normal': 'success', 'warning': 'warning', 'critical': 'danger' }
+  const map = { 'normal': 'success', 'warning': 'warning', 'critical': 'danger', 'expired': 'danger' }
   return map[status] || 'info'
 }
 
 const calculateHealth = (part) => {
-  // 简单模拟健康度百分比，仅基于里程
   if (!part.recommended_replacement_mileage || !part.current_mileage || !part.installed_mileage) return 100
 
   const used = part.current_mileage - part.installed_mileage
