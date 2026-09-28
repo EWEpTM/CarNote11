@@ -179,13 +179,19 @@
                     </Column>
                     <Column header="操作">
                         <template #body="slotProps">
-                            <div class="flex gap-2">
-                                <Button icon="pi pi-pencil" rounded text @click="editUser(slotProps.data)" />
+                            <div class="flex gap-2 flex-wrap">
+                                <Button icon="pi pi-pencil" rounded text @click="editUser(slotProps.data)"
+                                    v-tooltip.top="'编辑'" />
                                 <Button icon="pi pi-key" rounded text severity="warning"
-                                    @click="confirmResetPwd(slotProps.data)" />
+                                    @click="confirmResetPwd(slotProps.data)" v-tooltip.top="'重置密码'" />
                                 <Button :icon="slotProps.data.is_disabled ? 'pi pi-check' : 'pi pi-ban'" rounded text
                                     :severity="slotProps.data.is_disabled ? 'success' : 'danger'"
-                                    @click="toggleUserStatus(slotProps.data)" />
+                                    @click="toggleUserStatus(slotProps.data)"
+                                    v-tooltip.top="slotProps.data.is_disabled ? '启用' : '禁用'" />
+                                <Button icon="pi pi-trash" rounded text severity="danger"
+                                    @click="confirmDeleteUser(slotProps.data)"
+                                    :disabled="String(slotProps.data.id) === String(localStorage.getItem('userId'))"
+                                    v-tooltip.top="'删除用户及全部数据'" />
                             </div>
                         </template>
                     </Column>
