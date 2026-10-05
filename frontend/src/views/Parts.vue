@@ -57,16 +57,29 @@
                 <i class="pi pi-car mr-2"></i>
                 安装里程: {{ formatNumber(part.installed_mileage) }} km
               </div>
+              
+              <!-- 有寿命设置：显示预期寿命 -->
               <div class="mb-2" v-if="part.recommended_replacement_months || part.recommended_replacement_mileage">
                 <i class="pi pi-clock mr-2"></i>
                 预期寿命:
                 <span v-if="part.recommended_replacement_months">{{ part.recommended_replacement_months }}月</span>
                 <span v-if="part.recommended_replacement_months && part.recommended_replacement_mileage"> / </span>
-                <span v-if="part.recommended_replacement_mileage">{{ formatNumber(part.recommended_replacement_mileage)
-                }} km</span>
+                <span v-if="part.recommended_replacement_mileage">{{ formatNumber(part.recommended_replacement_mileage) }} km</span>
               </div>
+
+              <!-- 已行驶里程：有当前里程和安装里程时始终显示 -->
+              <div class="mb-2" v-if="part.current_mileage != null && part.installed_mileage != null">
+                <i class="pi pi-compass mr-2"></i>
+                已行驶:
+                {{ formatNumber(getDrivenMileage(part)) }} km
+                <span v-if="part.recommended_replacement_mileage" class="text-600">
+                  / {{ formatNumber(part.recommended_replacement_mileage) }} km
+                </span>
+              </div>
+
+              <!-- 进度条：仅在有里程寿命时显示 -->
               <div class="mt-3 surface-200 border-round overflow-hidden" style="height: 6px"
-                v-if="part.recommended_replacement_mileage && part.current_mileage">
+                v-if="part.recommended_replacement_mileage && part.current_mileage != null && part.installed_mileage != null">
                 <div class="bg-primary h-full"
                   :style="{ width: calculateHealth(part) + '%', backgroundColor: getHealthColor(part) + ' !important' }">
                 </div>
@@ -493,7 +506,6 @@ const confirmReplace = async () => {
   }
 }
 
-
 // 删除配件
 const deletePart = async (id) => {
   if (!confirm('确定要删除这个配件及其历史记录吗？')) return
@@ -526,13 +538,18 @@ const getStatusSeverity = (status) => {
 }
 
 const calculateHealth = (part) => {
-  // 简单模拟健康度百分比，仅基于里程
   if (!part.recommended_replacement_mileage || !part.current_mileage || !part.installed_mileage) return 100
 
   const used = part.current_mileage - part.installed_mileage
   const total = part.recommended_replacement_mileage
   const percent = Math.max(0, Math.min(100, 100 - (used / total * 100)))
   return percent
+}
+
+// 计算已行驶里程（当前里程 - 安装里程）
+const getDrivenMileage = (part) => {
+  if (part.current_mileage == null || part.installed_mileage == null) return 0
+  return Math.max(0, part.current_mileage - part.installed_mileage)
 }
 
 const getHealthColor = (part) => {
