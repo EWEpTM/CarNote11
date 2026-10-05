@@ -210,6 +210,7 @@ import { useRouter } from 'vue-router'
 import { useSiteStore } from '../utils/siteStore'
 import { vehicleAPI, analyticsAPI, energyAPI, maintenanceAPI } from '../api' // Added energy/maintenance APIs
 import logger from '../utils/logger'
+import { formatDate as fmtDate } from '../utils/date'
 import Chart from 'primevue/chart'
 
 const router = useRouter()
@@ -507,7 +508,7 @@ const expenseList = computed(() => {
 // Formatters
 const formatNumber = (n) => n ? Number(n).toLocaleString() : 0
 const formatCurrency = (v) => v ? '¥' + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '¥0.00'
-const formatDate = (d) => d ? new Date(d).toLocaleDateString() : ''
+const formatDate = fmtDate
 const getActivityLabel = (t) => t === 'energy' ? '能耗' : '保养'
 const getActivitySeverity = (t) => t === 'energy' ? 'info' : 'warning'
 

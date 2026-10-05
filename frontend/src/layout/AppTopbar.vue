@@ -109,6 +109,7 @@ import { useSiteStore } from '../utils/siteStore'
 import { messagesAPI } from '../api'
 import { useToast } from 'primevue/usetoast'
 import logger from '../utils/logger'
+import { formatDateTime as fmtDateTime } from '../utils/date'
 
 const siteStore = useSiteStore()
 const toast = useToast()
@@ -149,7 +150,7 @@ const loadNotifications = async () => {
 
 const formatDate = (dateStr) => {
     if (!dateStr) return ''
-    const date = new Date(dateStr)
+    const date = new Date(dateStr)  // JS Date handles UTC ISO strings correctly
     const now = new Date()
     const diff = now - date
     const seconds = Math.floor(diff / 1000)

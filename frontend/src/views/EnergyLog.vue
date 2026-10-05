@@ -202,6 +202,7 @@ import { useRouter, useRoute } from 'vue-router'
 import DataView from 'primevue/dataview'
 import { energyAPI, vehicleAPI, locationsAPI } from '../api'
 import logger from '../utils/logger'
+import { toUtcIsoString, formatDateTime, parseDate } from '../utils/date'
 
 const LocationPicker = defineAsyncComponent(() => import('../components/LocationPicker.vue'))
 
@@ -367,7 +368,7 @@ const editLog = (log) => {
   editingLog.value = log
   logForm.value = {
     ...log,
-    log_date: new Date(log.log_date),
+    log_date: parseDate(log.log_date),
     is_full: log.is_full === 1 || log.is_full === true
   }
   showDialog.value = true
@@ -384,6 +385,7 @@ const saveLog = async () => {
   try {
     const data = {
       ...logForm.value,
+      log_date: toUtcIsoString(logForm.value.log_date),
       is_full: logForm.value.is_full ? 1 : 0
     }
 
@@ -595,11 +597,8 @@ const importData = async (event) => {
   reader.readAsText(file, 'UTF-8')
 }
 
-// 格式化工具函数
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString() + ' ' + new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
+// 格式化工具函数 - 使用统一的时区工具
+const formatDate = formatDateTime
 
 const formatNumber = (num) => num ? Number(num).toLocaleString() : 0
 const formatCurrency = (val) => val ? '¥' + Number(val).toFixed(2) : '¥0.00'

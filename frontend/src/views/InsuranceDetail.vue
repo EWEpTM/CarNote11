@@ -173,6 +173,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import { insuranceAPI } from '../api'
+import { formatDate as fmtDate, parseLocalDate, toLocalDateString } from '../utils/date'
 
 const route = useRoute()
 const router = useRouter()
@@ -216,10 +217,7 @@ const loadDetail = async () => {
   }
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-'
-  return dateStr.split('T')[0]
-}
+const formatDate = fmtDate
 
 const formatNumber = (num) => {
   return Number(num || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -255,7 +253,7 @@ const saveClaim = async () => {
   try {
     const payload = {
       ...claimForm.value,
-      claim_date: claimForm.value.claim_date ? new Date(claimForm.value.claim_date).toISOString().split('T')[0] : null
+      claim_date: claimForm.value.claim_date ? toLocalDateString(claimForm.value.claim_date) : null
     }
 
     await insuranceAPI.createClaim(route.params.id, payload)

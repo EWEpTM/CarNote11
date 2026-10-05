@@ -592,6 +592,7 @@ import { useToast } from 'primevue/usetoast'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import { useSiteStore } from '../utils/siteStore'
+import { formatDate as fmtDate, formatDateTime as fmtDateTime, parseLocalDate, toLocalDateString } from '../utils/date'
 
 const siteStore = useSiteStore()
 
@@ -833,9 +834,9 @@ const onMgmtFilterChange = async () => {
 
 const editMgmtItem = (type, item) => {
     mgmtForm.value = { ...item }
-    if (mgmtForm.value.log_date) mgmtForm.value.log_date = new Date(mgmtForm.value.log_date)
-    if (mgmtForm.value.maintenance_date) mgmtForm.value.maintenance_date = new Date(mgmtForm.value.maintenance_date)
-    if (mgmtForm.value.buy_date) mgmtForm.value.buy_date = new Date(mgmtForm.value.buy_date)
+    if (mgmtForm.value.log_date) mgmtForm.value.log_date = parseLocalDate(mgmtForm.value.log_date)
+    if (mgmtForm.value.maintenance_date) mgmtForm.value.maintenance_date = parseLocalDate(mgmtForm.value.maintenance_date)
+    if (mgmtForm.value.buy_date) mgmtForm.value.buy_date = parseLocalDate(mgmtForm.value.buy_date)
     mgmtDialogs.value[type] = true
 }
 
@@ -907,7 +908,7 @@ const editUser = (user) => {
     userForm.value.is_verified = !!userForm.value.is_verified
     userForm.value.is_disabled = !!userForm.value.is_disabled
     if (userForm.value.vip_expiry) {
-        userForm.value.vip_expiry = new Date(userForm.value.vip_expiry);
+        userForm.value.vip_expiry = parseLocalDate(userForm.value.vip_expiry);
     }
     userDialog.value = true
 }
@@ -1030,8 +1031,8 @@ watch(activeTab, (idx) => {
     if (idx === 4) loadLogs()
 })
 
-const formatDate = (d) => d ? new Date(d).toLocaleDateString() : ''
-const formatDateTime = (d) => d ? new Date(d).toLocaleString() : ''
+const formatDate = fmtDate
+const formatDateTime = fmtDateTime
 
 onMounted(() => {
     loadBranding()

@@ -119,6 +119,8 @@ async function initSchema() {
     }
 }
 
+const { normalizeRowTimestamps } = require('../utils/date');
+
 /**
  * 执行查询 - 统一接口
  * @param {string} sql - SQL 语句
@@ -126,17 +128,20 @@ async function initSchema() {
  * @returns {Promise} 查询结果
  */
 function query(sql, params = []) {
+    // 确保任何传入的 Date 对象均以标准国际时间 (UTC ISO) 传入数据库
+    const processedParams = (params || []).map(p => (p instanceof Date ? p.toISOString() : p));
+
     if (DB_TYPE === 'sqlite') {
         return new Promise((resolve, reject) => {
             // 判断是 SELECT/PRAGMA 还是其他操作
             const upperSql = sql.trim().toUpperCase();
             if (upperSql.startsWith('SELECT') || upperSql.startsWith('PRAGMA')) {
-                db.all(sql, params, (err, rows) => {
+                db.all(sql, processedParams, (err, rows) => {
                     if (err) reject(err);
-                    else resolve(rows);
+                    else resolve(rows ? rows.map(r => normalizeRowTimestamps(r)) : []);
                 });
             } else {
-                db.run(sql, params, function (err) {
+                db.run(sql, processedParams, function (err) {
                     if (err) reject(err);
                     else resolve({
                         lastID: this.lastID,
@@ -168,12 +173,12 @@ function query(sql, params = []) {
             }
         }
 
-        return db.query(pgSql, params).then(result => {
+        return db.query(pgSql, processedParams).then(result => {
             // 如果是查询语句，直接返回 rows
             if (pgSql.trim().toUpperCase().startsWith('SELECT')) {
-                // 修正：确保 COUNT(*)、SUM、AVG 等聚合函数返回的是数字而非字符串
+                // 修正：确保 COUNT(*)、SUM、AVG 等聚合函数返回的是数字而非字符串，并统一时间为国际时间
                 const rows = result.rows.map(row => {
-                    const newRow = { ...row };
+                    const newRow = normalizeRowTimestamps({ ...row });
                     for (const key in newRow) {
                         // 如果键包含 count, sum, avg 或 total，尝试转换为数字
                         if (/count|sum|avg|total|mileage|cost|amount/i.test(key) && typeof newRow[key] === 'string') {
@@ -205,15 +210,16 @@ function query(sql, params = []) {
  * 获取单行数据
  */
 function get(sql, params = []) {
+    const processedParams = (params || []).map(p => (p instanceof Date ? p.toISOString() : p));
     if (DB_TYPE === 'sqlite') {
         return new Promise((resolve, reject) => {
-            db.get(sql, params, (err, row) => {
+            db.get(sql, processedParams, (err, row) => {
                 if (err) reject(err);
-                else resolve(row);
+                else resolve(row ? normalizeRowTimestamps(row) : null);
             });
         });
     } else {
-        return query(sql, params).then(rows => rows[0] || null);
+        return query(sql, processedParams).then(rows => rows[0] || null);
     }
 }
 

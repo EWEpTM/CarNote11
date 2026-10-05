@@ -225,6 +225,7 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { userAPI, vehicleAPI, systemAPI, exportAPI, importAPI } from '../api'
 import { convertToCSV, downloadFile, downloadBackupJSON } from '../utils/dataExport'
+import { formatDate as fmtDate } from '../utils/date'
 import { validateBackupFormat } from '../utils/dataImport'
 
 const router = useRouter()
@@ -413,10 +414,7 @@ const deleteApiKey = async (id) => {
     }
 }
 
-const formatDate = (dateStr) => {
-    if (!dateStr) return ''
-    return new Date(dateStr).toLocaleDateString()
-}
+const formatDate = fmtDate
 
 // 数据管理相关
 

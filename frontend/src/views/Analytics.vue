@@ -103,6 +103,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { vehicleAPI, analyticsAPI } from '../api'
 import logger from '../utils/logger'
+import { formatDate as fmtDate } from '../utils/date'
 import Chart from 'primevue/chart'
 
 // 状态
@@ -250,7 +251,7 @@ const monthlyTrendData = computed(() => {
 // 格式化工具
 const formatNumber = (num) => num ? num.toLocaleString() : 0
 const formatCurrency = (val) => val ? '¥' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '¥0.00'
-const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString() : ''
+const formatDate = fmtDate
 
 onMounted(() => {
     loadVehicles()

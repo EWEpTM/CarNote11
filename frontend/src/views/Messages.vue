@@ -229,6 +229,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { messagesAPI } from '../api'
+import { formatDateTime as fmtDateTime } from '../utils/date'
 import { useToast } from 'primevue/usetoast'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
@@ -391,11 +392,7 @@ const submitTicketResponse = async () => {
 }
 
 // 工具函数
-const formatDate = (dateStr) => {
-    if (!dateStr) return ''
-    const date = new Date(dateStr)
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
+const formatDate = fmtDateTime
 
 const getSeverityBorder = (type) => {
     const map = { info: 'border-blue-500', warning: 'border-orange-500', danger: 'border-red-500', success: 'border-green-500' }

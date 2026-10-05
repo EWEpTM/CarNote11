@@ -154,6 +154,7 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import { insuranceAPI, vehicleAPI } from '../api'
+import { formatDate as fmtDate, parseLocalDate, toLocalDateString } from '../utils/date'
 
 const router = useRouter()
 const toast = useToast()
@@ -237,10 +238,7 @@ const getExpiryStatus = (endDateStr) => {
   }
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '未设置'
-  return dateStr.split('T')[0]
-}
+const formatDate = fmtDate
 
 const formatNumber = (num) => {
   return Number(num || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -276,8 +274,8 @@ const openEditDialog = (item) => {
     insurance_company: item.insurance_company || '',
     policy_number: item.policy_number || '',
     type: item.type || '商业险',
-    start_date: item.start_date ? new Date(item.start_date) : null,
-    end_date: item.end_date ? new Date(item.end_date) : null,
+    start_date: item.start_date ? parseLocalDate(item.start_date) : null,
+    end_date: item.end_date ? parseLocalDate(item.end_date) : null,
     premium: item.premium || 0,
     policy_image_url: item.policy_image_url || '',
     ocr_content: item.ocr_content || '',
@@ -338,8 +336,8 @@ const saveInsurance = async () => {
   try {
     const payload = {
       ...form.value,
-      start_date: form.value.start_date ? new Date(form.value.start_date).toISOString().split('T')[0] : null,
-      end_date: form.value.end_date ? new Date(form.value.end_date).toISOString().split('T')[0] : null
+      start_date: form.value.start_date ? toLocalDateString(form.value.start_date) : null,
+      end_date: form.value.end_date ? toLocalDateString(form.value.end_date) : null
     }
 
     if (isEdit.value) {

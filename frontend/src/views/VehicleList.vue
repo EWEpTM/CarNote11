@@ -82,6 +82,7 @@
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { vehicleAPI } from '../api'
+import { formatDate as fmtDate, toLocalDateString, parseLocalDate } from '../utils/date'
 
 const toast = useToast()
 
@@ -128,7 +129,10 @@ const loadVehicles = async () => {
 // 编辑车辆
 const editVehicle = (vehicle) => {
   editingVehicle.value = vehicle
-  vehicleForm.value = { ...vehicle }
+  vehicleForm.value = {
+    ...vehicle,
+    purchase_date: parseLocalDate(vehicle.purchase_date)
+  }
   showDialog.value = true
 }
 
@@ -141,11 +145,16 @@ const saveVehicle = async () => {
 
   saving.value = true
   try {
+    const payload = {
+      ...vehicleForm.value,
+      purchase_date: toLocalDateString(vehicleForm.value.purchase_date)
+    }
+
     let res
     if (editingVehicle.value) {
-      res = await vehicleAPI.update(editingVehicle.value.id, vehicleForm.value)
+      res = await vehicleAPI.update(editingVehicle.value.id, payload)
     } else {
-      res = await vehicleAPI.create(vehicleForm.value)
+      res = await vehicleAPI.create(payload)
     }
 
     if (res.success) {
@@ -191,8 +200,7 @@ const resetForm = () => {
 }
 
 const formatDate = (date) => {
-  if (!date) return '未知'
-  return new Date(date).toLocaleDateString()
+  return fmtDate(date, '未知')
 }
 
 const getPowerTypeLabel = (type) => {

@@ -238,6 +238,7 @@ import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { partsAPI, vehicleAPI, locationsAPI } from '../api'
 import logger from '../utils/logger'
+import { formatDate as fmtDate, parseLocalDate, toLocalDateString } from '../utils/date'
 
 const LocationPicker = defineAsyncComponent(() => import('../components/LocationPicker.vue'))
 
@@ -356,7 +357,7 @@ const editPart = (part) => {
   editingPart.value = part
   partForm.value = {
     ...part,
-    installed_date: new Date(part.installed_date)
+    installed_date: parseLocalDate(part.installed_date)
   }
   showDialog.value = true
 }
@@ -371,6 +372,7 @@ const savePart = async () => {
   saving.value = true
   try {
     const data = { ...partForm.value }
+    if (data.installed_date) data.installed_date = toLocalDateString(data.installed_date)
 
     let res
     if (editingPart.value) {
@@ -467,7 +469,7 @@ const confirmReplace = async () => {
       vehicle_id: replacingPart.value.vehicle_id,
       old_part_name: replacingPart.value.name,
       new_part_name: replacingPart.value.name, // 默认同名
-      replacement_date: replaceForm.value.replacement_date,
+      replacement_date: replaceForm.value.replacement_date ? toLocalDateString(replaceForm.value.replacement_date) : null,
       mileage: replaceForm.value.mileage,
       cost: replaceForm.value.cost,
       service_provider: replaceForm.value.service_provider,
@@ -509,7 +511,7 @@ const deletePart = async (id) => {
 
 // 辅助函数
 const getVehiclePlate = (id) => vehicles.value.find(v => v.id === id)?.plate_number || '未知'
-const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString() : ''
+const formatDate = fmtDate
 const formatNumber = (num) => num ? num.toLocaleString() : 0
 const formatCurrency = (val) => val ? '¥' + val.toFixed(2) : '¥0.00'
 
