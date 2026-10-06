@@ -161,19 +161,20 @@
         </div>
       </div>
 
-        <div class="field-checkbox m-0">
+      <div class="flex align-items-center mb-3" style="gap: 0.5rem;">
+        <div class="field-checkbox m-0 flex align-items-center">
           <Checkbox v-model="logForm.is_full" :binary="true" inputId="is_full"
             :disabled="logForm.controlChecked" />
-          <label for="is_full" class="ml-2">加满/充满</label>
+          <label for="is_full" class="ml-2 mb-0">加满/充满</label>
         </div>
-
-        <div class="field-checkbox m-0">
+        <div class="field-checkbox m-0 flex align-items-center">
           <Checkbox v-model="logForm.controlChecked" :binary="true" inputId="record_control"
             :disabled="pendingResume" @change="onControlCheck" />
-          <label for="record_control" class="ml-2">
+          <label for="record_control" class="ml-2 mb-0">
             {{ pendingResume ? '开始记录' : '暂停记录' }}
           </label>
         </div>
+      </div>
 
       <div class="field">
         <label>位置 (补能站名称)</label>
