@@ -22,12 +22,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 👇 把这段代码放在这里（登录之后，构建之前）
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          flavor: |
+            lower=true
           tags: |
             type=raw,value=latest
 
