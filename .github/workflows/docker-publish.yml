@@ -22,16 +22,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 强制将仓库名称转换为小写
-      - name: Lowercase repository name
-        run: |
-          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
-
+      # 👇 把这段代码放在这里（登录之后，构建之前）
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ env.REPO_LOWER }}
+          images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest
 
