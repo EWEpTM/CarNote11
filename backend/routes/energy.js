@@ -40,27 +40,24 @@ async function recalculateVehicleLogs(vehicleId) {
 
         const control = Number(log.record_control) || 0;
         const prevControl = prevLog ? (Number(prevLog.record_control) || 0) : 0;
-
-        // 跨过暂停→开始 的间隙：断开
+        // 开始记录(2)，或上一条是暂停(1)：断开里程与油耗链条
         const isGapBreak = (control === 2) || (prevControl === 1);
 
         if (prevLog && !isGapBreak) {
             mileage_diff = log.mileage - prevLog.mileage;
             if (mileage_diff < 0) mileage_diff = 0;
         }
-        // isGapBreak 时 mileage_diff 保持 null，统计时 SUM 不会带上借出里程
 
         const type = log.energy_type || 'fuel';
         const tracker = trackers[type] || trackers.fuel;
 
         if (isGapBreak) {
-            // 断开油耗周期
             tracker.lastFull = null;
             tracker.sum = 0;
         }
 
         if (log.is_full) {
-            if (tracker.lastFull) {
+            if (tracker.lastFull && !isGapBreak) {
                 const cycleMileage = log.mileage - tracker.lastFull.mileage;
                 if (cycleMileage > 0) {
                     const totalAmount = parseFloat(tracker.sum) + parseFloat(log.amount);
@@ -142,6 +139,39 @@ router.post('/', authenticateUser, asyncHandler(async (req, res) => {
     }
 
     // 插入记录
+    const latest = await get(
+        `SELECT record_control FROM energy_logs
+         WHERE vehicle_id = ?
+         ORDER BY log_date DESC, id DESC
+         LIMIT 1`,
+        [vehicle_id]
+    );
+    const latestRc = latest ? (Number(latest.record_control) || 0) : 0;
+    let rc = record_control != null ? Number(record_control) : 0;
+    if (![0, 1, 2].includes(rc)) rc = 0;
+
+    if (latestRc === 1) {
+        if (rc !== 2) {
+            return res.status(400).json({
+                success: false,
+                message: '该车辆上次为「暂停记录」，本次必须勾选「开始记录」'
+            });
+        }
+        if (!is_full) {
+            return res.status(400).json({
+                success: false,
+                message: '开始记录时必须加满/充满'
+            });
+        }
+    }
+
+    if (rc === 1 && !is_full) {
+        return res.status(400).json({
+            success: false,
+            message: '暂停记录时必须加满/充满'
+        });
+    }
+
     const result = await query(
         `INSERT INTO energy_logs 
          (vehicle_id, log_date, mileage, energy_type, amount, cost, unit_price, 
@@ -149,8 +179,7 @@ router.post('/', authenticateUser, asyncHandler(async (req, res) => {
           location_name, location_lat, location_lng, notes)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [vehicle_id, log_date, mileage, energy_type, amount, cost || 0, unit_price || 0,
-            fuel_gauge_reading || 0, is_full ? 1 : 0,
-            record_control != null ? Number(record_control) : 0,
+            fuel_gauge_reading || 0, is_full ? 1 : 0, rc,
             location_name, location_lat, location_lng, notes]
     );
 
@@ -366,7 +395,6 @@ router.put('/:id', authenticateUser, asyncHandler(async (req, res) => {
         unit_price,
         fuel_gauge_reading,
         is_full,
-        record_control,
         location_name,
         location_lat,
         location_lng,
@@ -388,6 +416,9 @@ router.put('/:id', authenticateUser, asyncHandler(async (req, res) => {
         });
     }
 
+    let rc = record_control != null ? Number(record_control) : (Number(log.record_control) || 0);
+    if (![0, 1, 2].includes(rc)) rc = 0;
+
     await query(
         `UPDATE energy_logs 
          SET log_date = ?, mileage = ?, energy_type = ?, amount = ?, cost = ?,
@@ -396,8 +427,7 @@ router.put('/:id', authenticateUser, asyncHandler(async (req, res) => {
              updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
         [log_date, mileage, energy_type, amount, cost, unit_price, fuel_gauge_reading,
-            is_full ? 1 : 0, record_control != null ? Number(record_control) : 0,
-            location_name, location_lat, location_lng, notes, req.params.id]
+            is_full ? 1 : 0, rc, location_name, location_lat, location_lng, notes, req.params.id]
     );
 
     const { syncToSharedLocation } = require('./locations');
