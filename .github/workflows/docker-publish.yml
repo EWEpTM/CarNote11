@@ -15,19 +15,23 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+      # 👇 修改这里，使用刚刚创建的 PAT 登录
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_PAT }}
 
-      # 👇 把这段代码放在这里（登录之后，构建之前）
+      - name: Lowercase repository name
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ env.REPO_LOWER }}
           tags: |
             type=raw,value=latest
 
