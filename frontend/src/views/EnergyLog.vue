@@ -163,28 +163,16 @@
 
       <div class="flex flex-wrap align-items-center gap-4 mb-3">
         <div class="field-checkbox m-0">
-          <Checkbox
-            v-model="logForm.is_full"
-            :binary="true"
-            inputId="is_full"
-            :disabled="pendingResume && !editingLog"
-          />
+          <Checkbox v-model="logForm.is_full" :binary="true" inputId="is_full" />
           <label for="is_full" class="ml-2">加满/充满</label>
-          <small v-if="pendingResume && !editingLog" class="ml-2 text-orange-500">（还车开始必须加满）</small>
         </div>
 
         <div class="field-checkbox m-0">
-          <Checkbox
-            v-model="logForm.controlChecked"
-            :binary="true"
-            inputId="record_control"
-            :disabled="pendingResume && !editingLog"
-            @change="onControlCheck"
-          />
+          <Checkbox v-model="logForm.controlChecked" :binary="true" inputId="record_control"
+            @change="onControlCheck" />
           <label for="record_control" class="ml-2">
             {{ pendingResume ? '开始记录' : '暂停记录' }}
           </label>
-          <small v-if="pendingResume && !editingLog" class="ml-2 text-orange-500">（必须勾选以恢复统计）</small>
         </div>
       </div>
 
@@ -366,16 +354,6 @@ const loadLogs = async () => {
   }
 }
 
-const onControlCheck = () => {
-  if (!pendingResume.value && logForm.value.controlChecked) {
-    logForm.value.is_full = true
-  }
-  if (pendingResume.value && !editingLog.value) {
-    logForm.value.controlChecked = true
-    logForm.value.is_full = true
-  }
-}
-
 const onVehicleSelect = async () => {
   const vehicle = vehicles.value.find(v => v.id === logForm.value.vehicle_id)
   if (vehicle) {
@@ -389,7 +367,6 @@ const onVehicleSelect = async () => {
   }
   if (!editingLog.value && logForm.value.vehicle_id) {
     await checkPendingResume(logForm.value.vehicle_id)
-    applyForcedResume()
   }
 }
 
@@ -427,7 +404,6 @@ const editLog = (log) => {
     controlChecked: rc === 1 || rc === 2,
     record_control: rc
   }
-  // 编辑历史时不锁死「开始」；标签：2 显示开始，否则暂停
   pendingResume.value = (rc === 2)
   showDialog.value = true
 }
@@ -437,19 +413,6 @@ const saveLog = async () => {
   if (!logForm.value.vehicle_id || !logForm.value.mileage || !logForm.value.amount || !logForm.value.cost) {
     toast.add({ severity: 'warn', summary: '提示', detail: '请填写所有必填项', life: 3000 })
     return
-  }
-
-  if (!editingLog.value && pendingResume.value) {
-    if (!logForm.value.controlChecked || !logForm.value.is_full) {
-      toast.add({
-        severity: 'warn',
-        summary: '提示',
-        detail: '车辆处于暂停状态，本次必须勾选「开始记录」并加满/充满',
-        life: 4000
-      })
-      applyForcedResume()
-      return
-    }
   }
 
   saving.value = true

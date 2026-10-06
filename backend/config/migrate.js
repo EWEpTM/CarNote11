@@ -466,18 +466,11 @@ async function migratePostgreSQL() {
         await query("ALTER TABLE maintenance_records ADD COLUMN status VARCHAR(20) DEFAULT 'completed'");
     }
 
-    // energy_logs location columns
     const energyLocExists = await query("SELECT 1 FROM information_schema.columns WHERE table_name = 'energy_logs' AND column_name = 'location_name'");
     if (energyLocExists.length === 0) {
         await query("ALTER TABLE energy_logs ADD COLUMN location_name VARCHAR(255)");
         await query("ALTER TABLE energy_logs ADD COLUMN location_lat DECIMAL(10, 7)");
         await query("ALTER TABLE energy_logs ADD COLUMN location_lng DECIMAL(10, 7)");
-    }
-
-    // energy_logs record_control: 0普通 1暂停 2开始
-    const energyRcExists = await query("SELECT 1 FROM information_schema.columns WHERE table_name = 'energy_logs' AND column_name = 'record_control'");
-    if (energyRcExists.length === 0) {
-        await query("ALTER TABLE energy_logs ADD COLUMN record_control INTEGER DEFAULT 0");
     }
 
     const rcExists = await query(`
