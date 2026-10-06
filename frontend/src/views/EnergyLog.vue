@@ -161,20 +161,19 @@
         </div>
       </div>
 
-      <div class="flex flex-wrap align-items-center gap-4 mb-3">
         <div class="field-checkbox m-0">
-          <Checkbox v-model="logForm.is_full" :binary="true" inputId="is_full" />
+          <Checkbox v-model="logForm.is_full" :binary="true" inputId="is_full"
+            :disabled="logForm.controlChecked" />
           <label for="is_full" class="ml-2">加满/充满</label>
         </div>
 
         <div class="field-checkbox m-0">
           <Checkbox v-model="logForm.controlChecked" :binary="true" inputId="record_control"
-            @change="onControlCheck" />
+            :disabled="pendingResume" @change="onControlCheck" />
           <label for="record_control" class="ml-2">
             {{ pendingResume ? '开始记录' : '暂停记录' }}
           </label>
         </div>
-      </div>
 
       <div class="field">
         <label>位置 (补能站名称)</label>
@@ -282,6 +281,11 @@ const checkPendingResume = async (vehicleId) => {
     }
     if (list.length > 0 && Number(list[0].record_control) === 1) {
       pendingResume.value = true
+      // 上一条是暂停：新建记录强制勾选「开始记录」，且不可取消
+      if (!editingLog.value) {
+        logForm.value.controlChecked = true
+        logForm.value.is_full = true
+      }
     }
   } catch (e) {
     logger.error('checkPendingResume failed', e)
@@ -417,9 +421,16 @@ const saveLog = async () => {
 
   saving.value = true
   try {
-    const rc = logForm.value.controlChecked
-      ? (pendingResume.value ? 2 : 1)
-      : 0
+    // 上一条是暂停时，新建记录强制 record_control = 2（开始记录）
+    let rc
+    if (!editingLog.value && pendingResume.value) {
+      rc = 2
+      logForm.value.controlChecked = true
+    } else {
+      rc = logForm.value.controlChecked
+        ? (pendingResume.value ? 2 : 1)
+        : 0
+    }
 
     const data = {
       ...logForm.value,
